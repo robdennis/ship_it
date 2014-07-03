@@ -1,3 +1,4 @@
 fabric==1.9.0
 PyYaml==3.11
 six==1.7.3
+virtualenv==1.11.6
