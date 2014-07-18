@@ -28,3 +28,29 @@ def manifest():
         exclude='*.pyc',
         after_install='some_script.sh'
     ))
+
+
+@pytest.fixture
+def copy_manifest():
+    return Manifest('/test_dir/manifest.yaml', manifest_contents=dict(
+        version='0.1.0',
+        name='ship_it',
+        build_dependencies=['ruby-devel == 1.0.0'],
+        run_dependencies=['python'],
+        exclude='*.pyc',
+        after_install='some_script.sh',
+        method='copy',
+    ))
+
+
+@pytest.fixture
+def install_manifest():
+    return Manifest('/test_dir/manifest.yaml', manifest_contents=dict(
+        version='0.1.0',
+        name='ship_it',
+        build_dependencies=['ruby-devel == 1.0.0'],
+        run_dependencies=['python'],
+        exclude='*.pyc',
+        after_install='some_script.sh',
+        method='install',
+    ))

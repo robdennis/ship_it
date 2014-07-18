@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ship_it',
-    version='0.1.0',
+    version='0.1.1',
     install_requires=['fabric', 'PyYaml', 'six', 'virtualenv'],
     packages=find_packages(),
     url='github.com/robdennis/ship_it',

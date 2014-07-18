@@ -12,9 +12,14 @@ import fabric.api as fapi
 logger = logging.getLogger(__name__)
 
 
-def validate_paths(virtualenv_path, requirements_file):
+def _validate_paths(virtualenv_path, setup_or_req_file):
+    """
+    Validate that both the virtualenv folder path and the "other file" is an
+    absolute path, additionally checking that the "other file" exists and is
+    a file.
+    """
     assert path.isabs(virtualenv_path)
-    assert path.isabs(requirements_file) and path.isfile(requirements_file)
+    assert path.isabs(setup_or_req_file) and path.isfile(setup_or_req_file)
 
 
 def get_virtualenv():
@@ -22,22 +27,43 @@ def get_virtualenv():
     return '{} -m virtualenv'.format(quote(sys.executable))
 
 
-def build_virtualenv(virtualenv_path, requirements_file):
-    validate_paths(virtualenv_path, requirements_file)
+def _build_virtualenv(virtualenv_path):
+    """
+    :param virtualenv_path: the path to the virtualenv we're going to make
+    :return: the quoted-for-cli virtualenv_path
+    """
     # in case there's relevant escape characters
     venv_path = quote(virtualenv_path)
-    req_file = quote(requirements_file)
 
     if path.exists(virtualenv_path):
         fapi.local('rm -rf {}'.format(venv_path))
 
     fapi.local('{virtualenv} {location}'.format(virtualenv=get_virtualenv(),
                                                 location=venv_path))
+    return venv_path
 
+
+def install_package_in_virtualenv(virtualenv_path, setup_py_path):
+    _validate_paths(virtualenv_path, setup_py_path)
+
+    venv_path = _build_virtualenv(virtualenv_path)
+    # we're going to install our package into the app
     # this should ensure everything is installed, and respect any environment
     # variables that fabric was invoked with (notably custom paths)
-    fapi.local('{location}/bin/pip install -r {req}'.format(location=venv_path,
-                                                            req=req_file))
+    setup_file = quote(setup_py_path)
+    fapi.local('{venv}/bin/python {setup} install'.format(venv=venv_path,
+                                                          setup=setup_file))
+
+
+def copy_package_in_virtualenv(virtualenv_path, requirements_file):
+    _validate_paths(virtualenv_path, requirements_file)
+    req_file = quote(requirements_file)
+
+    venv_path = _build_virtualenv(virtualenv_path)
+    # this should ensure everything is installed, and respect any environment
+    # variables that fabric was invoked with (notably custom paths)
+    fapi.local('{venv}/bin/pip install -r {req}'.format(venv=venv_path,
+                                                        req=req_file))
 
 
 def patch_virtualenv(virtualenv_path, destination_path):
@@ -55,7 +81,7 @@ def patch_virtualenv(virtualenv_path, destination_path):
     ))
 
     # the activate script isn't handled by doing --relocatable
-    fapi.local("sed -i 's:{local}:{dest}:' {local_activate}".format(
+    fapi.local('sed -i "s:{local}:{dest}:" {local_activate}'.format(
         local=virtualenv_path, dest=destination_path,
         local_activate=quote(path.join(virtualenv_path, 'bin', 'activate'))))
 
