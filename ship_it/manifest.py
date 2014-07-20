@@ -110,6 +110,15 @@ class Manifest(object):
                                         self.contents['name'])
 
     @property
+    def local_package_path(self):
+        self.contents.setdefault('local_package_path', self.virtualenv_name)
+        if not path.isabs(self.contents['local_package_path']):
+            return path.abspath(path.join(self.manifest_dir,
+                                self.contents['local_package_path']))
+        else:
+            return self.contents['local_package_path']
+
+    @property
     def local_virtualenv_path(self):
         return path.join(self.manifest_dir, 'build', self.virtualenv_name)
 
