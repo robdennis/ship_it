@@ -15,23 +15,33 @@ def patch_executable(monkeypatch):
 
 class TestPackage(object):
     @pytest.fixture(autouse=True)
-    def make_files_exist_and_be_absolut(self, monkeypatch):
+    def make_files_exist_and_be_absolute(self, monkeypatch):
         always_true = lambda *args, **kwargs: True
         monkeypatch.setattr('ship_it.virtualenv.path.isfile', always_true)
         monkeypatch.setattr('ship_it.virtualenv.path.isabs', always_true)
 
-    @pytest.mark.parametrize('venv,req,expected', [
-        ('/local/venv/path', '/local/requirements.txt', [
+    @pytest.mark.parametrize('venv,req,pkg_dir,expected', [
+        ('/local/venv/path', '/local/requirements.txt', '/local/pkg', [
             '/local/venv/path/bin/pip install -r /local/requirements.txt',
+            'find /local/pkg -type f -name "*.py[co]" -delete;'
+            'find /local/pkg -type d -name "__pycache__" -delete',
+            'cp -r /local/pkg /local/venv/path',
+        ]),
+        # we normalize the package directory to ignore any trailing slashes
+        ('/local/venv/path', '/local/requirements.txt', '/local/pkg/', [
+            '/local/venv/path/bin/pip install -r /local/requirements.txt',
+            'find /local/pkg/ -type f -name "*.py[co]" -delete;'
+            'find /local/pkg/ -type d -name "__pycache__" -delete',
+            'cp -r /local/pkg /local/venv/path',
         ]),
     ])
-    def test_copying_a_packaging_into_virtualenv(self, mock_local, venv, req,
-                                                 expected):
+    def test_copying_a_packaging_into_virtualenv(self, mock_local, venv,
+                                                 pkg_dir, req, expected):
 
         assert not mock_local.called
         with mock.patch('ship_it.virtualenv._build_virtualenv',
                         return_value=quote(venv)):
-            virtualenv.copy_package_in_virtualenv(venv, req)
+            virtualenv.copy_package_in_virtualenv(venv, req, pkg_dir)
 
         assert mock_local.mock_calls == [mock.call(exp) for exp in expected]
 
@@ -119,11 +129,13 @@ def test_handle_prelink_issue(mock_logger, mock_local):
     ('/some/fake/absolute/path/to/requirements.txt', False)
 ])
 def test_handle_odd_reqfile_paths(req_file_path, valid):
+
+    args = '/some/path', req_file_path, '/other/path'
     if not valid:
         with pytest.raises(AssertionError):
-            virtualenv.copy_package_in_virtualenv('/some/path', req_file_path)
+            virtualenv.copy_package_in_virtualenv(*args)
     else:
-        virtualenv.copy_package_in_virtualenv('/some/path', req_file_path)
+        virtualenv.copy_package_in_virtualenv(*args)
 
 @pytest.mark.parametrize('setup_path, valid', [
     # convenient way to get an absolute path that exists

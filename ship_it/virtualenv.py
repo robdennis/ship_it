@@ -55,15 +55,29 @@ def install_package_in_virtualenv(virtualenv_path, setup_py_path):
                                                           setup=setup_file))
 
 
-def copy_package_in_virtualenv(virtualenv_path, requirements_file):
-    _validate_paths(virtualenv_path, requirements_file)
-    req_file = quote(requirements_file)
+def copy_package_in_virtualenv(virtualenv_path, requirements_file_path,
+                               package_path):
+    """
+    :param virtualenv_path: the path to the virtualenv directory (e.g. has
+        the bin/lib folders)
+    :param requirements_file_path: the path to the requirements.txt file
+    :param package_path: the path to the package we're going to copy into
+        the virtualenv
+    """
+    _validate_paths(virtualenv_path, requirements_file_path)
+    req_file = quote(requirements_file_path)
+    pkg_path = quote(package_path)
 
     venv_path = _build_virtualenv(virtualenv_path)
     # this should ensure everything is installed, and respect any environment
     # variables that fabric was invoked with (notably custom paths)
     fapi.local('{venv}/bin/pip install -r {req}'.format(venv=venv_path,
                                                         req=req_file))
+    fapi.local('find {pkg} -type f -name "*.py[co]" -delete;'
+               'find {pkg} -type d -name "__pycache__" -delete'.format(
+                pkg=pkg_path))
+    fapi.local('cp -r {} {}'.format(quote(pkg_path.rstrip('/')),
+                                    venv_path))
 
 
 def patch_virtualenv(virtualenv_path, destination_path):

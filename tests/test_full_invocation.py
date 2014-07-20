@@ -71,4 +71,5 @@ class TestCallingTheRightPackaging(object):
         assert not mock_copy.called
         ship_it._package_virtualenv_with_manifest(copy_manifest, 'req', 'set')
         mock_copy.assert_called_once_with(copy_manifest.local_virtualenv_path,
-                                          'req')
+                                          'req',
+                                          copy_manifest.local_package_path)

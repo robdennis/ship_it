@@ -76,6 +76,42 @@ def test_override_virtualenv_name():
     assert test_man.name == 'prefix-ship_it'
 
 
+class TestPackagePath(object):
+    """
+    Test things related to figuring out the package path
+    """
+    def test_default_to_virtualenv_name(self):
+        """
+        Test that if unspecified, it uses the virtualenv name and the manifest
+        directory
+        """
+        test_man = Manifest('/path/manifest.yaml', manifest_contents=dict(
+            name='prefix-ship_it',
+            virtualenv_name='ship_it'
+        ))
+        assert test_man.virtualenv_name == 'ship_it'
+        assert test_man.local_package_path == '/path/ship_it'
+
+    @pytest.mark.parametrize('pkg_path,expected', [
+        # we respect absolute paths
+        ('/abs/path/to/pkg', '/abs/path/to/pkg'),
+        # paths are relative to manifest directory
+        ('pkg', '/path/pkg'),
+        ('../pkg', '/pkg'),
+    ])
+    def test_override(self, pkg_path, expected):
+        """
+        Test that if unspecified, it uses the virtualenv name and the manifest
+        directory
+        """
+        test_man = Manifest('/path/manifest.yaml', manifest_contents=dict(
+            name='ship_it',
+            local_package_path=pkg_path
+        ))
+
+        assert test_man.local_package_path == expected
+
+
 class TestGettingArgsAndFlags(object):
     """
     Test the specifics of getting command line flags and args from a manifest

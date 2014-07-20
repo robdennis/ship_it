@@ -42,7 +42,8 @@ def _package_virtualenv_with_manifest(manifest, requirements_file_path,
 
     venv = manifest.local_virtualenv_path
     if manifest.contents.get('method') == 'copy':
-        virtualenv.copy_package_in_virtualenv(venv, requirements_file_path)
+        virtualenv.copy_package_in_virtualenv(venv, requirements_file_path,
+                                              manifest.local_package_path)
     else:
         virtualenv.install_package_in_virtualenv(venv, setup_py_path)
 
