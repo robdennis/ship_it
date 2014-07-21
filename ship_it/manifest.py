@@ -55,6 +55,7 @@ class Manifest(object):
         cfg_args, cfg_flags = self.get_config_args_and_flags()
         args.extend(cfg_args)
         flags.extend(cfg_flags)
+        flags.extend(self.get_dependency_flags())
 
         return args, flags
 
@@ -95,6 +96,12 @@ class Manifest(object):
                                                              script_path))
 
         return flags.items()
+
+    def get_dependency_flags(self):
+        """
+        get all the flags related to dependencies
+        """
+        return [('depends', dep) for dep in self.contents.get('depends', [])]
 
     @property
     def manifest_dir(self):
