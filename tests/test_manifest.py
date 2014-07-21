@@ -13,13 +13,7 @@ from ship_it.manifest import Manifest, get_manifest_from_path
 def manifest_file():
     return """
 version: 0.1.0
-exclude: '*.pyc'
 name: ship_it
-after_install: some_script.sh
-build_dependencies:
-    - ruby-devel == 1.0.0
-run_dependencies:
-    - python
 """
 
 
@@ -164,20 +158,44 @@ class TestGettingArgsAndFlags(object):
         assert sorted(actual_args) == sorted(expected_args)
         assert sorted(actual_flags) == sorted(expected_flags)
 
-    @pytest.mark.parametrize('test_contents, expected_args, expected_flags', [
-        # if nothing else, we include the cfg and single args
-        ({},
-         ['cfg arg', '/test_dir/build/ship_it=/opt'],
-         [('single', 'flag'), ('cfg', 'flag'), ('rpm-user', 'ship_it'),
-          ('rpm-group', 'ship_it'), ('directories', '/opt/ship_it')]),
+    @pytest.mark.parametrize('dependency_type,value,expected', [
+        # you can specify nothing, and it's fine
+        ('depends', [], []),
+        # depends uses the `--depends` flag and respects versions
+        ('depends', ['foo', 'bar == 2.0'], [
+            ('depends', 'foo'),
+            ('depends', 'bar == 2.0'),
+        ]),
     ])
+    def test_requirements(self, manifest, dependency_type, value, expected):
+        """
+        Test that we correctly set the dependency flags for requirements
+        """
+        manifest.contents[dependency_type] = value
+
+        assert sorted(manifest.get_dependency_flags()) == sorted(expected)
+
+
     @mock.patch('ship_it.manifest.Manifest.get_config_args_and_flags',
                 return_value=(['cfg arg'], [('cfg', 'flag')]))
     @mock.patch('ship_it.manifest.Manifest.get_single_flags',
                 return_value=[('single', 'flag')])
-    def test_get_overall_args(self, mock_single, mock_cfg, manifest,
-                              test_contents, expected_args, expected_flags):
-        manifest.contents.update(test_contents)
+    @mock.patch('ship_it.manifest.Manifest.get_dependency_flags',
+                return_value=[('depends', 'weird-dependency == 0.1')])
+    def test_get_overall_args(self, mock_depends, mock_single, mock_cfg,
+                              manifest):
+        expected_args = [
+            'cfg arg',
+            '/test_dir/build/ship_it=/opt'
+        ]
+        expected_flags = [
+            ('single', 'flag'),
+            ('cfg', 'flag'),
+            ('rpm-user', 'ship_it'),
+            ('rpm-group', 'ship_it'),
+            ('directories', '/opt/ship_it'),
+            ('depends', 'weird-dependency == 0.1')
+        ]
         actual_args, actual_flags = manifest.get_args_and_flags()
         assert sorted(actual_args) == sorted(expected_args)
         assert sorted(actual_flags) == sorted(expected_flags)
