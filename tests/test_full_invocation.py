@@ -56,7 +56,6 @@ class TestCallingTheRightPackaging(object):
     Based on the setup of the manifest, want to call the correct virtualenv
     function.
     """
-
     @pytest.mark.parametrize('man_fixture', ['manifest', 'install_manifest'])
     @mock.patch('ship_it.virtualenv.install_package_in_virtualenv')
     def test_installing(self, mock_install, request, man_fixture):

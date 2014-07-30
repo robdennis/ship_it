@@ -8,7 +8,7 @@ from ship_it import cli
 def test_invoke_with_command_line(mock_local):
     assert not mock_local.called
     cli.invoke_fpm('test')
-    mock_local.assert_called_once_with('fpm -s dir -t rpm test')
+    mock_local.assert_called_once_with('fpm -f -s dir -t rpm test')
 
 
 class TestGettingTheCommandLine(object):

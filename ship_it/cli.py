@@ -9,7 +9,7 @@ import fabric.api as fapi
 
 def invoke_fpm(command_line):
     # TODO: this should one be able to support deb
-    fapi.local('fpm -s dir -t rpm {}'.format(command_line))
+    fapi.local('fpm -f -s dir -t rpm {}'.format(command_line))
 
 
 def format_flags(flags):
