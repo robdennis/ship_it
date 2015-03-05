@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import mock
 import os
 import pytest
+from StringIO import StringIO
 
 import ship_it
 from ship_it.manifest import Manifest, get_manifest_from_path
@@ -33,7 +34,7 @@ def test_open_for_yaml(mock_fobj, mock_load):
     assert not mock_load.called
     Manifest('some path')
     mock_fobj.assert_called_once_with(os.path.abspath('some path'))
-    mock_load.assert_called_once_with(mock_fobj.return_value)
+    mock_load.assert_called_once_with(mock_fobj.return_value.read())
 
 
 @pytest.mark.parametrize('path', [
@@ -55,6 +56,45 @@ def test_manifest_normalizes_path(mock_content, path):
     assert os.path.isabs(_man.manifest_dir)
     assert '~' not in _man.path
     assert '~' not in _man.manifest_dir
+
+
+float_version1 = """
+version: 0.2
+name: ship_it
+"""
+
+float_version2 = """
+version: 0.20
+name: ship_it
+"""
+
+string_version = """
+version: '0.20'
+name: ship_it
+"""
+
+non_number_version = """
+version: abc
+name: ship_it
+"""
+
+three_part_version = """
+version: 0.2.30
+name: ship_it
+"""
+
+@pytest.mark.parametrize('manifest_content,expected_version', [
+    (float_version1, '0.2'),
+    (float_version2, '0.20'),
+    (string_version, '0.20'),
+    (non_number_version, 'abc'),
+    (three_part_version, '0.2.30'),
+])
+def test_manifest_content_from_path(manifest_content, expected_version):
+    with mock.patch('ship_it.manifest.Manifest.get_manifest_fobj') as get:
+        get.return_value = StringIO(manifest_content)
+        manifest_output = Manifest.get_manifest_content_from_path(None)
+        assert manifest_output['version'] == expected_version
 
 
 def test_override_virtualenv_name():

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import pipes
+import re
 from os import path
+
 import yaml
 
 
@@ -38,7 +41,14 @@ class Manifest(object):
 
     @staticmethod
     def get_manifest_content_from_path(manifest_path):
-        return yaml.load(Manifest.get_manifest_fobj(manifest_path))
+        manifest_bytes = Manifest.get_manifest_fobj(manifest_path).read()
+        manifest_content = yaml.load(manifest_bytes)
+        if type(manifest_content.get('version')) is float:
+            version_match = re.search('\n\s*version:\s*([.0-9]+)\n',
+                                      manifest_bytes)
+            if version_match:
+                manifest_content['version'] = version_match.group(1)
+        return manifest_content
 
     def get_args_and_flags(self):
 
