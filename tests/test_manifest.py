@@ -8,6 +8,7 @@ from StringIO import StringIO
 
 import ship_it
 from ship_it.manifest import Manifest, get_manifest_from_path
+import yaml
 
 
 @pytest.fixture
@@ -34,7 +35,8 @@ def test_open_for_yaml(mock_fobj, mock_load):
     assert not mock_load.called
     Manifest('some path')
     mock_fobj.assert_called_once_with(os.path.abspath('some path'))
-    mock_load.assert_called_once_with(mock_fobj.return_value.read())
+    mock_load.assert_called_once_with(mock_fobj.return_value,
+                                      Loader=yaml.BaseLoader)
 
 
 @pytest.mark.parametrize('path', [
