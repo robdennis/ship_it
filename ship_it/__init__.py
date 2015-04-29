@@ -10,23 +10,26 @@ def validate_path(path_to_check):
     assert path.isabs(path_to_check) and path.isfile(path_to_check)
 
 
-def fpm(manifest_path, requirements_file_path=None, setup_py_path=None):
-
-    _man = get_manifest_from_path(manifest_path)
+def fpm(manifest_path, requirements_file_path=None, setup_py_path=None,
+        **overrides):
+    manifest = get_manifest_from_path(manifest_path)
     if requirements_file_path is None:
-        requirements_file_path = path.join(_man.manifest_dir,
+        requirements_file_path = path.join(manifest.manifest_dir,
                                            'requirements.txt')
     if setup_py_path is None:
-        setup_py_path = path.join(_man.manifest_dir, 'setup.py')
+        setup_py_path = path.join(manifest.manifest_dir, 'setup.py')
 
-    validate_path(_man.path)
+    validate_path(manifest.path)
 
-    _package_virtualenv_with_manifest(_man, requirements_file_path,
+    _package_virtualenv_with_manifest(manifest, requirements_file_path,
                                       setup_py_path)
-    virtualenv.patch_virtualenv(_man.local_virtualenv_path,
-                                _man.remote_virtualenv_path)
+    virtualenv.patch_virtualenv(manifest.local_virtualenv_path,
+                                manifest.remote_virtualenv_path)
 
-    command_line = cli.get_command_line(*_man.get_args_and_flags())
+    man_args, man_flags = manifest.get_args_and_flags()
+    man_flags.extend(overrides.items())
+    command_line = cli.get_command_line(man_args, man_flags)
+
     cli.invoke_fpm(command_line)
 
 

@@ -5,7 +5,7 @@ setup(
     name='ship_it',
     version='0.2.0',
     install_requires=['fabric', 'PyYaml', 'six', 'virtualenv'],
-    packages=find_packages(),
+    packages=['ship_it'],
     url='github.com/robdennis/ship_it',
     license='MIT',
     author='Rob Dennis',
