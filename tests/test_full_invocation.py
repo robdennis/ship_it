@@ -13,7 +13,7 @@ import ship_it
 @mock.patch('ship_it.validate_path')
 @mock.patch('ship_it.cli.invoke_fpm')
 @mock.patch('ship_it.Manifest.get_args_and_flags',
-            return_value=(['arg'], {'--flag': 'value'}))
+            return_value=(['arg'], [('--flag', 'value')]))
 @mock.patch('ship_it.cli.get_command_line', return_value='command line')
 def test_manifest_calls(mock_cl, mock_get, mock_invoke, mock_val,
                         mock_pack, mock_patch, manifest):
@@ -25,11 +25,12 @@ def test_manifest_calls(mock_cl, mock_get, mock_invoke, mock_val,
     assert all(not mocked.called for mocked in mocked_functions)
 
     with mock.patch('ship_it.get_manifest_from_path', return_value=manifest):
-        ship_it.fpm(manifest.path)
+        ship_it.fpm(manifest.path, overridden='flag')
 
     assert all(mocked.called for mocked in mocked_functions)
     assert mock_val.mock_calls == [mock.call('/test_dir/manifest.yaml')]
-    mock_cl.assert_called_once_with(['arg'], {'--flag': 'value'})
+    mock_cl.assert_called_once_with(['arg'], [('--flag', 'value'),
+                                              ('overridden', 'flag')])
     mock_invoke.assert_called_once_with('command line')
 
 
