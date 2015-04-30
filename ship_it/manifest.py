@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
 import pipes
+import re
 from os import path
+
 import yaml
 
 
@@ -38,7 +41,8 @@ class Manifest(object):
 
     @staticmethod
     def get_manifest_content_from_path(manifest_path):
-        return yaml.load(Manifest.get_manifest_fobj(manifest_path))
+        fobj = Manifest.get_manifest_fobj(manifest_path)
+        return yaml.load(fobj, Loader=yaml.BaseLoader)
 
     def get_args_and_flags(self):
 
