@@ -112,6 +112,24 @@ def test_override_virtualenv_name():
     assert test_man.name == 'prefix-ship_it'
 
 
+@pytest.mark.parametrize('val,expected', [
+    ('true', True),
+    ('1', True),
+    ('1', True),
+    ('0', True),
+    ('', True),
+    (None, False),
+])
+def test_upgrade_pip(val, expected):
+    """
+    Test that upgrade pip is available
+    """
+    test_man = Manifest('manifest.yaml', manifest_contents=dict(
+        upgrade_pip=val
+    ))
+    assert test_man.upgrade_pip is expected
+
+
 class TestPackagePath(object):
     """
     Test things related to figuring out the package path
