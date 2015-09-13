@@ -92,14 +92,14 @@ class TestBuildVirtualEnv(object):
         assert not mock_local.called
         with mock.patch('ship_it.virtualenv.path.exists', return_value=exists):
             VirtualEnvPackager('/my/local path/to/venv')
-    
+
         if exists:
             # We expect that we're going to delete the directory
             rm_rf_call = [mock.call("rm -rf '/my/local path/to/venv'")]
         else:
             # We don't need to do that
             rm_rf_call = []
-    
+
         assert mock_local.mock_calls == rm_rf_call + [
             mock.call("/path/to/python.py -m virtualenv '/my/local path/to/venv'")
         ]

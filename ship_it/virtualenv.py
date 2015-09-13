@@ -8,26 +8,27 @@ from pipes import quote
 # this is to more easily mock for unittest
 import fabric.api as fapi
 
-
 logger = logging.getLogger(__name__)
 
-
-def _quote_and_vlidate_file(setup_or_req_file):
+def _quote_and_vlidate_file(filepath):
     """
     Checking that the file exists, is absolute, and is a file.
     Return quoted file
+
+    :param filepath: path to file
     """
-    assert path.isabs(setup_or_req_file) and path.isfile(setup_or_req_file)
-    return quote(setup_or_req_file)
+    assert path.isabs(filepath) and path.isfile(filepath)
+    return quote(filepath)
 
 def _quote_and_validate_dir(dirpath):
     """
     Checking that the directory exists and is absolute
     Return quoted directory
+
+    :param dirpath: path to directory
     """
     assert path.isabs(dirpath)
     return quote(dirpath)
-
 
 def get_virtualenv():
     assert sys.executable, "can't infer python executable path"
@@ -36,27 +37,37 @@ def get_virtualenv():
 class VirtualEnvPackager(object):
 
     def __init__(self, virtualenv_path, upgrade_pip=False):
+        """
+        :param virtualenv_path: the path to the virtualenv we're going to make
+        :param upgrade_pip: upgrade pip after building virtualenv
+        """
         self.virtualenv_path = virtualenv_path
         self.build_virtualenv(virtualenv_path, upgrade_pip)
 
     def build_virtualenv(self, virtualenv_path, upgrade_pip):
         """
         :param virtualenv_path: the path to the virtualenv we're going to make
-        :return: the quoted-for-cli virtualenv_path
+        :param upgrade_pip: upgrade pip after building virtualenv
         """
         quoted_path = _quote_and_validate_dir(virtualenv_path)
-    
+
         if path.exists(virtualenv_path):
             fapi.local('rm -rf {}'.format(quoted_path))
-    
+
         fapi.local('{virtualenv} {location}'.format(virtualenv=get_virtualenv(),
                                                     location=quoted_path))
         if upgrade_pip:
             fapi.local('{pip} install --upgrade pip'
                        ''.format(pip=quote(path.join(virtualenv_path,
                                                      'bin', 'pip'))))
-    
+
     def run_venv_command(self, command, arg_list):
+        """
+        Run a command in virtualenv's /bin/ folder
+
+        :param command: the command to run
+        :param arg_list: list of arguments passed to command
+        """
         args = ' '.join(arg_list)
         command = quote(path.join(self.virtualenv_path,
                             'bin', command))
@@ -65,10 +76,12 @@ class VirtualEnvPackager(object):
 
     def install_package(self, setup_py_path):
         """
-        Run package's setup.py install
+        Run python setup.py install
+
+        :param setup_py_path: the path to setup.py
         """
         setup_file = _quote_and_vlidate_file(setup_py_path)
-    
+
         # we're going to install our package into the app
         # this should ensure everything is installed, and respect any environment
         # variables that fabric was invoked with (notably custom paths)
@@ -76,23 +89,26 @@ class VirtualEnvPackager(object):
 
     def install_requirements(self, requirements_file_path):
         """
-        Package installation is provided by requirements.txt
+        Package installation is provided by requirements file. Usually
+        because '.' is included in requirements file.
+
+        :param requirements_file_path: the path to the requirements.txt file
         """
         req_file = _quote_and_vlidate_file(requirements_file_path)
         self.run_venv_command('pip', ['install', '-r', req_file])
 
     def pip_install_package(self, requirements_file_path):
         """
-        Install local package from '.' using pip
+        Install local package from '.' using pip. Installs requirements from
+        requirements_file_path first.
+
+        :param requirements_file_path: the path to the requirements.txt file
         """
         self.install_requirements(requirements_file_path)
         self.run_venv_command('pip', ['install', '.'])
 
-
     def copy_package(self, requirements_file_path, package_path):
         """
-        :param virtualenv_path: the path to the virtualenv directory (e.g. has
-            the bin/lib folders)
         :param requirements_file_path: the path to the requirements.txt file
         :param package_path: the path to the package we're going to copy into
             the virtualenv
@@ -108,26 +124,24 @@ class VirtualEnvPackager(object):
         fapi.local('cp -r {} {}'.format(quote(package_path.rstrip('/')),
                                         quote(self.virtualenv_path)))
 
-
     def patch_virtualenv(self, destination_path):
         """
         Patch the virtualenv we built to be relocatable and
-    
+
         :param destination_path: the path you expect it to be in the resulting
             system
         """
         self.remove_prelink_if_applicable()
-    
+
         fapi.local('{virtualenv} --relocatable {local_path}'.format(
             virtualenv=get_virtualenv(), local_path=quote(self.virtualenv_path)
         ))
-    
+
         # the activate script isn't handled by doing --relocatable
         fapi.local('sed -i "s:{local}:{dest}:" {local_activate}'.format(
             local=self.virtualenv_path, dest=destination_path,
             local_activate=quote(path.join(self.virtualenv_path, 'bin', 'activate'))))
-    
-    
+
     def remove_prelink_if_applicable(self):
         """
         Packaging a virtualenv has issues if you prelink the executables. Ideally,

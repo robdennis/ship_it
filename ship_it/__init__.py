@@ -40,7 +40,7 @@ def _package_virtualenv_with_manifest(manifest, requirements_file_path,
     """
     Given a manifest, package up the virtualenv. The following methods are
     supported via the manifest's `method` setting:
-    
+
     * copy: copy in the top-level directory
     * requirements: run ``pip install -r requirements_file``
         - useful if requirements_file contains '.' 
@@ -60,10 +60,10 @@ def _package_virtualenv_with_manifest(manifest, requirements_file_path,
 
     elif install_method == 'requirements':
         packager.install_requirements(requirements_file_path)
-    
+
     elif install_method == 'pip':    
         packager.pip_install_package(requirements_file_path)
-        
+
     else:
         packager.install_package(setup_py_path)
 
