@@ -3,7 +3,8 @@ from __future__ import unicode_literals
 from os import path
 
 from ship_it.manifest import Manifest, get_manifest_from_path
-from ship_it import virtualenv, cli
+from ship_it import cli
+from ship_it.virtualenv import VirtualEnvPackager
 
 
 def validate_path(path_to_check):
@@ -21,10 +22,11 @@ def fpm(manifest_path, requirements_file_path=None, setup_py_path=None,
 
     validate_path(manifest.path)
 
-    _package_virtualenv_with_manifest(manifest, requirements_file_path,
-                                      setup_py_path)
-    virtualenv.patch_virtualenv(manifest.local_virtualenv_path,
-                                manifest.remote_virtualenv_path)
+    packager = _package_virtualenv_with_manifest(manifest,
+                                                  requirements_file_path,
+                                                  setup_py_path)
+
+    packager.patch_virtualenv(manifest.remote_virtualenv_path)
 
     man_args, man_flags = manifest.get_args_and_flags()
     man_flags.extend(overrides.items())
@@ -36,18 +38,34 @@ def fpm(manifest_path, requirements_file_path=None, setup_py_path=None,
 def _package_virtualenv_with_manifest(manifest, requirements_file_path,
                                       setup_py_path):
     """
-    Given a manifest, package up the virtualenv, either by copying in the
-    top-level directory, or by installing it into the virtualenv with:
-    ``python setup.py install``. This is determined using the manifest's
-    "method" key, with the value "copy." Anything else will be considered an
-    install.
+    Given a manifest, package up the virtualenv. The following methods are
+    supported via the manifest's `method` setting:
+
+    * copy: copy in the top-level directory
+    * requirements: run ``pip install -r requirements_file``
+        - useful if requirements_file contains '.' 
+    * pip: run ``pip install .``
+    * install (default): run ``python setup.py install``
     """
 
     venv = manifest.local_virtualenv_path
-    if manifest.contents.get('method') == 'copy':
-        virtualenv.copy_package_in_virtualenv(venv, requirements_file_path,
-                                              manifest.local_package_path)
-    else:
-        virtualenv.install_package_in_virtualenv(venv, setup_py_path)
+    install_method = manifest.contents.get('method')
 
+    # Buld virtualenv and optionally upgrade pip
+    packager = VirtualEnvPackager(venv, manifest.upgrade_pip)
+
+    if install_method == 'copy':
+        packager.copy_package(requirements_file_path,
+                                manifest.local_package_path)
+
+    elif install_method == 'requirements':
+        packager.install_requirements(requirements_file_path)
+
+    elif install_method == 'pip':    
+        packager.pip_install_package(requirements_file_path)
+
+    else:
+        packager.install_package(setup_py_path)
+
+    return packager
 
