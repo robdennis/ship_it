@@ -116,6 +116,10 @@ class Manifest(object):
         return self.contents['name']
 
     @property
+    def upgrade_pip(self):
+        return bool(self.contents.get('upgrade_pip') is not None)
+
+    @property
     def virtualenv_name(self):
         return self.contents.setdefault('virtualenv_name',
                                         self.contents['name'])

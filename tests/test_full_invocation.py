@@ -8,8 +8,8 @@ import pytest
 import ship_it
 
 
-@mock.patch('ship_it.virtualenv.patch_virtualenv')
-@mock.patch('ship_it._package_virtualenv_with_manifest')
+@mock.patch('ship_it.VirtualEnvPackager.patch_virtualenv')
+@mock.patch('ship_it._package_virtualenv_with_manifest', return_value=ship_it.virtualenv.VirtualEnvPackager)
 @mock.patch('ship_it.validate_path')
 @mock.patch('ship_it.cli.invoke_fpm')
 @mock.patch('ship_it.Manifest.get_args_and_flags',
@@ -58,18 +58,16 @@ class TestCallingTheRightPackaging(object):
     function.
     """
     @pytest.mark.parametrize('man_fixture', ['manifest', 'install_manifest'])
-    @mock.patch('ship_it.virtualenv.install_package_in_virtualenv')
+    @mock.patch('ship_it.virtualenv.VirtualEnvPackager.install_package')
     def test_installing(self, mock_install, request, man_fixture):
         the_manifest = request.getfuncargvalue(man_fixture)
         assert not mock_install.called
         ship_it._package_virtualenv_with_manifest(the_manifest, 'req', 'set')
-        mock_install.assert_called_once_with(
-            the_manifest.local_virtualenv_path, 'set')
+        mock_install.assert_called_once_with('set')
 
-    @mock.patch('ship_it.virtualenv.copy_package_in_virtualenv')
+    @mock.patch('ship_it.virtualenv.VirtualEnvPackager.copy_package')
     def test_copying(self, mock_copy, copy_manifest):
         assert not mock_copy.called
         ship_it._package_virtualenv_with_manifest(copy_manifest, 'req', 'set')
-        mock_copy.assert_called_once_with(copy_manifest.local_virtualenv_path,
-                                          'req',
+        mock_copy.assert_called_once_with('req',
                                           copy_manifest.local_package_path)
