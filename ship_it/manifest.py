@@ -60,6 +60,7 @@ class Manifest(object):
         args.extend(cfg_args)
         flags.extend(cfg_flags)
         flags.extend(self.get_dependency_flags())
+        flags.extend(self.get_exclude_flags())
 
         return args, flags
 
@@ -106,6 +107,12 @@ class Manifest(object):
         get all the flags related to dependencies
         """
         return [('depends', dep) for dep in self.contents.get('depends', [])]
+
+    def get_exclude_flags(self):
+        """
+        get all the excludes defined in manifest
+        """
+        return [('exclude', excl) for excl in self.contents.get('excludes', [])]
 
     @property
     def manifest_dir(self):

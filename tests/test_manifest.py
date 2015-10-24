@@ -236,14 +236,36 @@ class TestGettingArgsAndFlags(object):
         assert sorted(manifest.get_dependency_flags()) == sorted(expected)
 
 
+    @pytest.mark.parametrize('value,expected', [
+        # you can specify nothing, and it's fine
+        ([], []),
+        (['**.pyc','*.pyo'], [
+            ('exclude', '**.pyc'),
+            ('exclude', '*.pyo'),
+        ]),
+        (['**/__pycache__'], [
+            ('exclude', '**/__pycache__')
+        ])
+    ])
+    def test_excludes(self, manifest, value, expected):
+        """
+        Test that we correctly set the dependency flags for requirements
+        """
+        manifest.contents['excludes'] = value
+
+        assert sorted(manifest.get_exclude_flags()) == sorted(expected)
+
+
     @mock.patch('ship_it.manifest.Manifest.get_config_args_and_flags',
                 return_value=(['cfg arg'], [('cfg', 'flag')]))
     @mock.patch('ship_it.manifest.Manifest.get_single_flags',
                 return_value=[('single', 'flag')])
     @mock.patch('ship_it.manifest.Manifest.get_dependency_flags',
                 return_value=[('depends', 'weird-dependency == 0.1')])
-    def test_get_overall_args(self, mock_depends, mock_single, mock_cfg,
-                              manifest):
+    @mock.patch('ship_it.manifest.Manifest.get_exclude_flags',
+                return_value=[('exclude', '**.pyc'), ('exclude', '**.pyo')])
+    def test_get_overall_args(self, mock_excludes, mock_depends, mock_single,
+                              mock_cfg, manifest):
         expected_args = [
             'cfg arg',
             '/test_dir/build/ship_it=/opt'
@@ -254,7 +276,9 @@ class TestGettingArgsAndFlags(object):
             ('rpm-user', 'ship_it'),
             ('rpm-group', 'ship_it'),
             ('directories', '/opt/ship_it'),
-            ('depends', 'weird-dependency == 0.1')
+            ('depends', 'weird-dependency == 0.1'),
+            ('exclude', '**.pyc'),
+            ('exclude', '**.pyo'),
         ]
         actual_args, actual_flags = manifest.get_args_and_flags()
         assert sorted(actual_args) == sorted(expected_args)
