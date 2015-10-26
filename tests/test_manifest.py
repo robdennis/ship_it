@@ -114,11 +114,11 @@ def test_override_virtualenv_name():
 
 @pytest.mark.parametrize('val,expected', [
     ('true', True),
-    ('1', True),
-    ('1', True),
-    ('0', True),
-    ('', True),
-    (None, False),
+    ('yes', True),
+    ('on', True),
+    ('y', True),
+    ('', False),
+    ('false', False),
 ])
 def test_upgrade_pip(val, expected):
     """
@@ -236,25 +236,51 @@ class TestGettingArgsAndFlags(object):
         assert sorted(manifest.get_dependency_flags()) == sorted(expected)
 
 
-    @pytest.mark.parametrize('value,expected', [
+    @pytest.mark.parametrize('value,exclude_compiled,expected', [
         # you can specify nothing, and it's fine
-        ([], []),
-        (['**.pyc','*.pyo'], [
+        ([], 'false', []),
+        (['**.pyc','*.pyo'], 'false', [
             ('exclude', '**.pyc'),
             ('exclude', '*.pyo'),
         ]),
-        (['**/__pycache__'], [
-            ('exclude', '**/__pycache__')
+        (['**/__pycache__', '*.py[co]'], 'true', [
+            ('exclude', '**/__pycache__'),
+            ('exclude', '*.py[co]'),
+            ('exclude', '__pycache__'),
+        ]),
+        ([], 'true', [
+            ('exclude', '*.py[co]'),
+            ('exclude', '__pycache__'),
         ])
     ])
-    def test_excludes(self, manifest, value, expected):
+    def test_excludes(self, manifest, value, exclude_compiled, expected):
         """
-        Test that we correctly set the dependency flags for requirements
+        Test that we correctly get exclude flags
         """
-        manifest.contents['excludes'] = value
+        manifest.contents['exclude'] = value
+        manifest.contents['exclude_compiled'] = exclude_compiled
 
         assert sorted(manifest.get_exclude_flags()) == sorted(expected)
 
+    @pytest.mark.parametrize('value,expected', [
+        ('YES', True),
+        ('y', True),
+        ('Y', True),
+        ('True', True),
+        ('true', True),
+        ('On', True),
+        ('ON', True),
+        ('NO', False),
+        ('n', False),
+        ('False', False),
+        ('false', False),
+        ('Off', False),
+        ('OFF', False),
+        ('off', False),
+    ])
+    def test_get_bool_value(self, manifest, value, expected):
+        manifest.contents['test'] = value
+        assert manifest.get_bool_value('test') is expected
 
     @mock.patch('ship_it.manifest.Manifest.get_config_args_and_flags',
                 return_value=(['cfg arg'], [('cfg', 'flag')]))

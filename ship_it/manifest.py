@@ -102,6 +102,12 @@ class Manifest(object):
 
         return flags.items()
 
+    def get_bool_value(self, name):
+        """
+        Get manifest value `name` as a boolean
+        """
+        return bool(self.contents.get(name, '').lower() in ['true', 'yes', 'on', 'y'])
+
     def get_dependency_flags(self):
         """
         get all the flags related to dependencies
@@ -110,9 +116,13 @@ class Manifest(object):
 
     def get_exclude_flags(self):
         """
-        get all the excludes defined in manifest
+        Get all the excludes defined in manifest. Optionally add '*.py[co]' and
+        '__pycache__' if exclude_compiled is set. 
         """
-        return [('exclude', excl) for excl in self.contents.get('excludes', [])]
+        excludes = set([('exclude', excl) for excl in self.contents.get('exclude', [])])
+        if self.get_bool_value('exclude_compiled'):
+            excludes |= set([('exclude', excl) for excl in ['*.py[co]', '__pycache__']])
+        return excludes
 
     @property
     def manifest_dir(self):
@@ -124,7 +134,7 @@ class Manifest(object):
 
     @property
     def upgrade_pip(self):
-        return bool(self.contents.get('upgrade_pip') is not None)
+        return self.get_bool_value('upgrade_pip')
 
     @property
     def virtualenv_name(self):
