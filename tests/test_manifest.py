@@ -114,11 +114,11 @@ def test_override_virtualenv_name():
 
 @pytest.mark.parametrize('val,expected', [
     ('true', True),
-    ('1', True),
-    ('1', True),
-    ('0', True),
-    ('', True),
-    (None, False),
+    ('yes', True),
+    ('on', True),
+    ('y', True),
+    ('', False),
+    ('false', False),
 ])
 def test_upgrade_pip(val, expected):
     """
@@ -236,14 +236,62 @@ class TestGettingArgsAndFlags(object):
         assert sorted(manifest.get_dependency_flags()) == sorted(expected)
 
 
+    @pytest.mark.parametrize('value,exclude_compiled,expected', [
+        # you can specify nothing, and it's fine
+        ([], 'false', []),
+        (['**.pyc','*.pyo'], 'false', [
+            ('exclude', '**.pyc'),
+            ('exclude', '*.pyo'),
+        ]),
+        (['**/__pycache__', '*.py[co]'], 'true', [
+            ('exclude', '**/__pycache__'),
+            ('exclude', '*.py[co]'),
+            ('exclude', '__pycache__'),
+        ]),
+        ([], 'true', [
+            ('exclude', '*.py[co]'),
+            ('exclude', '__pycache__'),
+        ])
+    ])
+    def test_excludes(self, manifest, value, exclude_compiled, expected):
+        """
+        Test that we correctly get exclude flags
+        """
+        manifest.contents['exclude'] = value
+        manifest.contents['exclude_compiled'] = exclude_compiled
+
+        assert sorted(manifest.get_exclude_flags()) == sorted(expected)
+
+    @pytest.mark.parametrize('value,expected', [
+        ('YES', True),
+        ('y', True),
+        ('Y', True),
+        ('True', True),
+        ('true', True),
+        ('On', True),
+        ('ON', True),
+        ('NO', False),
+        ('n', False),
+        ('False', False),
+        ('false', False),
+        ('Off', False),
+        ('OFF', False),
+        ('off', False),
+    ])
+    def test_get_bool_value(self, manifest, value, expected):
+        manifest.contents['test'] = value
+        assert manifest.get_bool_value('test') is expected
+
     @mock.patch('ship_it.manifest.Manifest.get_config_args_and_flags',
                 return_value=(['cfg arg'], [('cfg', 'flag')]))
     @mock.patch('ship_it.manifest.Manifest.get_single_flags',
                 return_value=[('single', 'flag')])
     @mock.patch('ship_it.manifest.Manifest.get_dependency_flags',
                 return_value=[('depends', 'weird-dependency == 0.1')])
-    def test_get_overall_args(self, mock_depends, mock_single, mock_cfg,
-                              manifest):
+    @mock.patch('ship_it.manifest.Manifest.get_exclude_flags',
+                return_value=[('exclude', '**.pyc'), ('exclude', '**.pyo')])
+    def test_get_overall_args(self, mock_excludes, mock_depends, mock_single,
+                              mock_cfg, manifest):
         expected_args = [
             'cfg arg',
             '/test_dir/build/ship_it=/opt'
@@ -254,7 +302,9 @@ class TestGettingArgsAndFlags(object):
             ('rpm-user', 'ship_it'),
             ('rpm-group', 'ship_it'),
             ('directories', '/opt/ship_it'),
-            ('depends', 'weird-dependency == 0.1')
+            ('depends', 'weird-dependency == 0.1'),
+            ('exclude', '**.pyc'),
+            ('exclude', '**.pyo'),
         ]
         actual_args, actual_flags = manifest.get_args_and_flags()
         assert sorted(actual_args) == sorted(expected_args)

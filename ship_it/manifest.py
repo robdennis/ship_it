@@ -60,6 +60,7 @@ class Manifest(object):
         args.extend(cfg_args)
         flags.extend(cfg_flags)
         flags.extend(self.get_dependency_flags())
+        flags.extend(self.get_exclude_flags())
 
         return args, flags
 
@@ -101,11 +102,27 @@ class Manifest(object):
 
         return flags.items()
 
+    def get_bool_value(self, name):
+        """
+        Get manifest value `name` as a boolean
+        """
+        return bool(self.contents.get(name, '').lower() in ['true', 'yes', 'on', 'y'])
+
     def get_dependency_flags(self):
         """
         get all the flags related to dependencies
         """
         return [('depends', dep) for dep in self.contents.get('depends', [])]
+
+    def get_exclude_flags(self):
+        """
+        Get all the excludes defined in manifest. Optionally add '*.py[co]' and
+        '__pycache__' if exclude_compiled is set. 
+        """
+        excludes = set([('exclude', excl) for excl in self.contents.get('exclude', [])])
+        if self.get_bool_value('exclude_compiled'):
+            excludes |= set([('exclude', excl) for excl in ['*.py[co]', '__pycache__']])
+        return excludes
 
     @property
     def manifest_dir(self):
@@ -117,7 +134,7 @@ class Manifest(object):
 
     @property
     def upgrade_pip(self):
-        return bool(self.contents.get('upgrade_pip') is not None)
+        return self.get_bool_value('upgrade_pip')
 
     @property
     def virtualenv_name(self):
