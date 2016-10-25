@@ -4,12 +4,12 @@ import pipes
 from os import path
 
 # imported this way to more easily mock
-import fabric.api as fapi
-
+import invoke
 
 def invoke_fpm(command_line):
     # TODO: this should one be able to support deb
-    fapi.local('fpm -f -s dir -t rpm {}'.format(command_line))
+    cmd = 'fpm -f -s dir -t rpm {}'.format(command_line)
+    invoke.run(cmd)
 
 
 def format_flags(flags):

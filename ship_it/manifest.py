@@ -45,7 +45,6 @@ class Manifest(object):
         return yaml.load(fobj, Loader=yaml.BaseLoader)
 
     def get_args_and_flags(self):
-
         args = [pipes.quote('{}={}'.format(self.local_virtualenv_path,
                                            self.pkg_location))]
         flags = self.get_single_flags()
@@ -100,7 +99,7 @@ class Manifest(object):
                 flags[script_type] = path.normpath(path.join(self.manifest_dir,
                                                              script_path))
 
-        return flags.items()
+        return list(flags.items())
 
     def get_bool_value(self, name):
         """
@@ -117,7 +116,7 @@ class Manifest(object):
     def get_exclude_flags(self):
         """
         Get all the excludes defined in manifest. Optionally add '*.py[co]' and
-        '__pycache__' if exclude_compiled is set. 
+        '__pycache__' if exclude_compiled is set.
         """
         excludes = set([('exclude', excl) for excl in self.contents.get('exclude', [])])
         if self.get_bool_value('exclude_compiled'):

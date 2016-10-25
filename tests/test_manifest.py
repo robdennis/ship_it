@@ -4,7 +4,10 @@ from __future__ import unicode_literals
 import mock
 import os
 import pytest
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 import ship_it
 from ship_it.manifest import Manifest, get_manifest_from_path
