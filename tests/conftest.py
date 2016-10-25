@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 import mock
 import pytest
 
-import fabric.api
+import invoke
 from ship_it.manifest import Manifest
 
 
@@ -15,7 +15,7 @@ def mock_local():
 
 @pytest.fixture(autouse=True)
 def patch_local(monkeypatch, mock_local):
-    monkeypatch.setattr(fabric.api, 'local', mock_local)
+    monkeypatch.setattr(invoke, 'run', mock_local)
 
 
 @pytest.fixture
