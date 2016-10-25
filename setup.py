@@ -6,7 +6,7 @@ setup(
     version='0.6.0',
     install_requires=['invoke', 'PyYaml', 'six', 'virtualenv', 'click'],
     packages=['ship_it'],
-    url='github.com/robdennis/ship_it',
+    url='https://github.com/robdennis/ship_it',
     license='MIT',
     author='Rob Dennis',
     author_email='rdennis+ship_it@gmail.com',
