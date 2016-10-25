@@ -6,7 +6,7 @@ from os import path
 from pipes import quote
 
 # this is to more easily mock for unittest
-import fabric.api as fapi
+import invoke
 
 logger = logging.getLogger(__name__)
 
@@ -52,12 +52,12 @@ class VirtualEnvPackager(object):
         quoted_path = _quote_and_validate_dir(virtualenv_path)
 
         if path.exists(virtualenv_path):
-            fapi.local('rm -rf {}'.format(quoted_path))
+            invoke.run('rm -rf {}'.format(quoted_path))
 
-        fapi.local('{virtualenv} {location}'.format(virtualenv=get_virtualenv(),
+        invoke.run('{virtualenv} {location}'.format(virtualenv=get_virtualenv(),
                                                     location=quoted_path))
         if upgrade_pip:
-            fapi.local('{pip} install --upgrade pip'
+            invoke.run('{pip} install --upgrade pip'
                        ''.format(pip=quote(path.join(virtualenv_path,
                                                      'bin', 'pip'))))
 
@@ -71,7 +71,7 @@ class VirtualEnvPackager(object):
         args = ' '.join(arg_list)
         command = quote(path.join(self.virtualenv_path,
                             'bin', command))
-        fapi.local('{command} {args}'.format(command=command,
+        invoke.run('{command} {args}'.format(command=command,
                                              args=args))
 
     def install_package(self, setup_py_path):
@@ -84,7 +84,7 @@ class VirtualEnvPackager(object):
 
         # we're going to install our package into the app
         # this should ensure everything is installed, and respect any environment
-        # variables that fabric was invoked with (notably custom paths)
+        # variables that we were invoked with (notably custom paths)
         self.run_venv_command('python', [setup_file, 'install'])
 
     def install_requirements(self, requirements_file_path):
@@ -118,10 +118,10 @@ class VirtualEnvPackager(object):
 
         self.run_venv_command('pip', ['install', '-r', req_file])
 
-        fapi.local('find {pkg} -type f -name "*.py[co]" -delete;'
+        invoke.run('find {pkg} -type f -name "*.py[co]" -delete;'
                    'find {pkg} -type d -name "__pycache__" -delete'.format(
                     pkg=pkg_path))
-        fapi.local('cp -r {} {}'.format(quote(package_path.rstrip('/')),
+        invoke.run('cp -r {} {}'.format(quote(package_path.rstrip('/')),
                                         quote(self.virtualenv_path)))
 
     def patch_virtualenv(self, destination_path):
@@ -133,12 +133,12 @@ class VirtualEnvPackager(object):
         """
         self.remove_prelink_if_applicable()
 
-        fapi.local('{virtualenv} --relocatable {local_path}'.format(
+        invoke.run('{virtualenv} --relocatable {local_path}'.format(
             virtualenv=get_virtualenv(), local_path=quote(self.virtualenv_path)
         ))
 
         # the activate script isn't handled by doing --relocatable
-        fapi.local('sed -i "s:{local}:{dest}:" {local_activate}'.format(
+        invoke.run('sed -i "s:{local}:{dest}:" {local_activate}'.format(
             local=self.virtualenv_path, dest=destination_path,
             local_activate=quote(path.join(self.virtualenv_path, 'bin', 'activate'))))
 
@@ -149,7 +149,7 @@ class VirtualEnvPackager(object):
         it for our python.
         """
         try:
-            fapi.local('prelink -u {}'.format(quote(path.join(self.virtualenv_path,
+            invoke.run('prelink -u {}'.format(quote(path.join(self.virtualenv_path,
                                                               'bin', 'python'))))
         except:
             # We're assuming that if it didn't work, then prelink must not be
