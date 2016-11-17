@@ -107,7 +107,7 @@ class TestBuildVirtualEnv(object):
     @pytest.mark.parametrize('upgrade_pip', [True, False])
     def test_upgrade_pip(self, upgrade_pip, mock_local):
         assert mock_local.mock_calls == []
-        pkger = VirtualEnvPackager('/tmp/foo', upgrade_pip)
+        pkger = VirtualEnvPackager('/tmp/foo', upgrade_pip, False)
 
         if upgrade_pip:
             upgrade_pip_call = [mock.call('/tmp/foo/bin/pip install --upgrade pip')]
@@ -117,6 +117,18 @@ class TestBuildVirtualEnv(object):
             mock.call("/path/to/python.py -m virtualenv /tmp/foo")
         ] + upgrade_pip_call
 
+    @pytest.mark.parametrize('upgrade_wheel', [True, False])
+    def test_upgrade_wheel(self, upgrade_wheel, mock_local):
+        assert mock_local.mock_calls == []
+        pkger = VirtualEnvPackager('/tmp/foo', False, upgrade_wheel)
+
+        if upgrade_wheel:
+            upgrade_wheel_call = [mock.call('/tmp/foo/bin/pip install --upgrade wheel')]
+        else:
+            upgrade_wheel_call = []
+        assert mock_local.mock_calls == [
+            mock.call("/path/to/python.py -m virtualenv /tmp/foo")
+        ] + upgrade_wheel_call
 
 class TestPatchVirtualEnv(object):
 

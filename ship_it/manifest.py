@@ -136,6 +136,10 @@ class Manifest(object):
         return self.get_bool_value('upgrade_pip')
 
     @property
+    def upgrade_wheel(self):
+        return self.get_bool_value('upgrade_wheel')
+
+    @property
     def virtualenv_name(self):
         return self.contents.setdefault('virtualenv_name',
                                         self.contents['name'])

@@ -36,18 +36,20 @@ def get_virtualenv():
 
 class VirtualEnvPackager(object):
 
-    def __init__(self, virtualenv_path, upgrade_pip=False):
+    def __init__(self, virtualenv_path, upgrade_pip=False, upgrade_wheel=False):
         """
         :param virtualenv_path: the path to the virtualenv we're going to make
         :param upgrade_pip: upgrade pip after building virtualenv
+        :param upgrade_wheel: upgrade wheel after building virtualenv
         """
         self.virtualenv_path = virtualenv_path
-        self.build_virtualenv(virtualenv_path, upgrade_pip)
+        self.build_virtualenv(virtualenv_path, upgrade_pip, upgrade_wheel)
 
-    def build_virtualenv(self, virtualenv_path, upgrade_pip):
+    def build_virtualenv(self, virtualenv_path, upgrade_pip, upgrade_wheel):
         """
         :param virtualenv_path: the path to the virtualenv we're going to make
         :param upgrade_pip: upgrade pip after building virtualenv
+        :param upgrade_wheel: upgrade wheel after building virtualenv
         """
         quoted_path = _quote_and_validate_dir(virtualenv_path)
 
@@ -58,6 +60,11 @@ class VirtualEnvPackager(object):
                                                     location=quoted_path))
         if upgrade_pip:
             invoke.run('{pip} install --upgrade pip'
+                       ''.format(pip=quote(path.join(virtualenv_path,
+                                                     'bin', 'pip'))))
+
+        if upgrade_wheel:
+            invoke.run('{pip} install --upgrade wheel'
                        ''.format(pip=quote(path.join(virtualenv_path,
                                                      'bin', 'pip'))))
 

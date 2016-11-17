@@ -132,6 +132,22 @@ def test_upgrade_pip(val, expected):
     ))
     assert test_man.upgrade_pip is expected
 
+@pytest.mark.parametrize('val,expected', [
+    ('true', True),
+    ('yes', True),
+    ('on', True),
+    ('y', True),
+    ('', False),
+    ('false', False),
+])
+def test_upgrade_wheel(val, expected):
+    """
+    Test that upgrade wheel is available
+    """
+    test_man = Manifest('manifest.yaml', manifest_contents=dict(
+        upgrade_wheel=val
+    ))
+    assert test_man.upgrade_wheel is expected
 
 class TestPackagePath(object):
     """
