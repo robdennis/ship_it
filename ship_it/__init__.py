@@ -43,7 +43,7 @@ def _package_virtualenv_with_manifest(manifest, requirements_file_path,
 
     * copy: copy in the top-level directory
     * requirements: run ``pip install -r requirements_file``
-        - useful if requirements_file contains '.' 
+        - useful if requirements_file contains '.'
     * pip: run ``pip install .``
     * install (default): run ``python setup.py install``
     """
@@ -52,7 +52,7 @@ def _package_virtualenv_with_manifest(manifest, requirements_file_path,
     install_method = manifest.contents.get('method')
 
     # Buld virtualenv and optionally upgrade pip
-    packager = VirtualEnvPackager(venv, manifest.upgrade_pip)
+    packager = VirtualEnvPackager(venv, manifest.upgrade_pip, manifest.upgrade_wheel)
 
     if install_method == 'copy':
         packager.copy_package(requirements_file_path,
@@ -61,7 +61,7 @@ def _package_virtualenv_with_manifest(manifest, requirements_file_path,
     elif install_method == 'requirements':
         packager.install_requirements(requirements_file_path)
 
-    elif install_method == 'pip':    
+    elif install_method == 'pip':
         packager.pip_install_package(requirements_file_path)
 
     else:
