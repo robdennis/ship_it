@@ -11,7 +11,7 @@ setup(
     author='Rob Dennis',
     author_email='rdennis+ship_it@gmail.com',
     description='thin build wrapper around fpm that enforces some best '
-                'practices for created deb/rpms of python applications',
+                'practices for creating deb/rpm packages for python applications',
     entry_points={
         'console_scripts': ['ship_it=ship_it.scripts:main']
         }
