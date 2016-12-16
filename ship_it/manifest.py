@@ -49,9 +49,11 @@ class Manifest(object):
                                            self.pkg_location))]
         flags = self.get_single_flags()
 
-        # add the package user and group
+
+        # add the package user and group. Use what's specified
+        # if present, or default to virtualenv_name.
         flags.extend([('{}-{}'.format(self.pkg_type, name_type),
-                       self.virtualenv_name)
+                       self.contents.get(name_type, self.virtualenv_name))
                       for name_type in ('user', 'group')])
         flags.append(('directories', self.remote_virtualenv_path))
 
