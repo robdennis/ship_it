@@ -1,18 +1,19 @@
 # coding=utf-8
 from __future__ import unicode_literals
+import sys
+import subprocess
 from os import path
 
 from ship_it.manifest import Manifest, get_manifest_from_path
 from ship_it import cli
 from ship_it.virtualenv import VirtualEnvPackager
-import subprocess
-import sys
 
 
 def validate_path(path_to_check):
     assert path.isabs(path_to_check) and path.isfile(path_to_check)
 
-def version_from_setup_py(setup_py_path):
+
+def get_version_from_setup_py(setup_py_path):
     out = subprocess.check_output([sys.executable, setup_py_path, '--version'])
     return out.decode('utf-8').rstrip()
 
@@ -29,8 +30,8 @@ def fpm(manifest_path, requirements_file_path=None, setup_py_path=None,
     validate_path(manifest.path)
 
     packager = _package_virtualenv_with_manifest(manifest,
-                                                  requirements_file_path,
-                                                  setup_py_path)
+                                                 requirements_file_path,
+                                                 setup_py_path)
 
     packager.patch_virtualenv(manifest.remote_virtualenv_path)
 
@@ -38,7 +39,7 @@ def fpm(manifest_path, requirements_file_path=None, setup_py_path=None,
     man_flags.extend(overrides.items())
 
     if not any(flag[0] == 'version' for flag in man_flags):
-        man_flags.extend([('version', version_from_setup_py(setup_py_path))])
+        man_flags.extend([('version', get_version_from_setup_py(setup_py_path))])
 
     command_line = cli.get_command_line(man_args, man_flags)
 
