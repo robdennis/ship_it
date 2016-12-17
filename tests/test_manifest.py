@@ -22,6 +22,7 @@ name: ship_it
 """
 
 
+
 def test_sanity(tmpdir, manifest_file, manifest):
     """
     Does our mock manifest contents evaluate the same as a file?
