@@ -20,3 +20,14 @@ What's a Manifest?
 ==================
 
 defines some additional information that we'll send to ``fpm``
+
+Example
+=======
+
+    version: 0.13.0
+    name: frufyfru
+    before_install: preinstall
+    user: root
+    group: root
+    config_files:
+      /etc/frufyfru.conf: examples/frufyfru.conf

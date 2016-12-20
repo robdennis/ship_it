@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='ship_it',
-    version='0.7.0',
+    version='0.8.0',
     install_requires=['invoke', 'PyYaml', 'six', 'virtualenv', 'click'],
     packages=['ship_it'],
     url='https://github.com/robdennis/ship_it',
@@ -11,7 +11,7 @@ setup(
     author='Rob Dennis',
     author_email='rdennis+ship_it@gmail.com',
     description='thin build wrapper around fpm that enforces some best '
-                'practices for created deb/rpms of python applications',
+                'practices for creating deb/rpm packages for python applications',
     entry_points={
         'console_scripts': ['ship_it=ship_it.scripts:main']
         }

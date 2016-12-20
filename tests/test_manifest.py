@@ -22,6 +22,7 @@ name: ship_it
 """
 
 
+
 def test_sanity(tmpdir, manifest_file, manifest):
     """
     Does our mock manifest contents evaluate the same as a file?
@@ -301,16 +302,26 @@ class TestGettingArgsAndFlags(object):
         manifest.contents['test'] = value
         assert manifest.get_bool_value('test') is expected
 
-    @mock.patch('ship_it.manifest.Manifest.get_config_args_and_flags',
-                return_value=(['cfg arg'], [('cfg', 'flag')]))
-    @mock.patch('ship_it.manifest.Manifest.get_single_flags',
-                return_value=[('single', 'flag')])
-    @mock.patch('ship_it.manifest.Manifest.get_dependency_flags',
-                return_value=[('depends', 'weird-dependency == 0.1')])
-    @mock.patch('ship_it.manifest.Manifest.get_exclude_flags',
-                return_value=[('exclude', '**.pyc'), ('exclude', '**.pyo')])
+    @pytest.mark.parametrize('cfg_update,expected_user,expected_group', [
+        ({},                'ship_it', 'ship_it'),
+        ({'user': 'root'},  'root',    'ship_it'),
+        ({'group': 'root'}, 'ship_it', 'root'),
+        ({'user': 'root',
+          'group': 'root'}, 'root', 'root'),
+    ])
+    @mock.patch('ship_it.manifest.Manifest.get_config_args_and_flags')
+    @mock.patch('ship_it.manifest.Manifest.get_single_flags')
+    @mock.patch('ship_it.manifest.Manifest.get_dependency_flags')
+    @mock.patch('ship_it.manifest.Manifest.get_exclude_flags')
     def test_get_overall_args(self, mock_excludes, mock_depends, mock_single,
-                              mock_cfg, manifest):
+                              mock_cfg, manifest, cfg_update, expected_user, expected_group):
+        # Return values must be set here, rather than in the decorator,
+        # to reset their state for each iteration.
+        mock_excludes.return_value = [('exclude', '**.pyc'), ('exclude', '**.pyo')]
+        mock_depends.return_value = [('depends', 'weird-dependency == 0.1')]
+        mock_single.return_value = [('single', 'flag')]
+        mock_cfg.return_value = (['cfg arg'], [('cfg', 'flag')])
+
         expected_args = [
             'cfg arg',
             '/test_dir/build/ship_it=/opt'
@@ -318,13 +329,14 @@ class TestGettingArgsAndFlags(object):
         expected_flags = [
             ('single', 'flag'),
             ('cfg', 'flag'),
-            ('rpm-user', 'ship_it'),
-            ('rpm-group', 'ship_it'),
+            ('rpm-user', expected_user),
+            ('rpm-group', expected_group),
             ('directories', '/opt/ship_it'),
             ('depends', 'weird-dependency == 0.1'),
             ('exclude', '**.pyc'),
             ('exclude', '**.pyo'),
         ]
+        manifest.contents.update(cfg_update)
         actual_args, actual_flags = manifest.get_args_and_flags()
         assert sorted(actual_args) == sorted(expected_args)
         assert sorted(actual_flags) == sorted(expected_flags)
