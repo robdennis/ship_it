@@ -59,6 +59,7 @@ class Manifest(object):
 
         cfg_args, cfg_flags = self.get_config_args_and_flags()
         args.extend(cfg_args)
+        args.extend(self.get_extra_dirs())
         flags.extend(cfg_flags)
         flags.extend(self.get_dependency_flags())
         flags.extend(self.get_exclude_flags())
@@ -85,6 +86,45 @@ class Manifest(object):
                                         pipes.quote(path.dirname(remote_cfg))))
 
         return args, flags
+
+    def get_extra_dirs(self, validate_dirs_exist=True):
+        """
+        Allows user to optionally define extra directories that live outside
+        of the python package to include in RPM.  Defined in the manifest as
+        `extra_dirs`.
+
+        `extra_dirs` is list. Items can either be strings or dicts with
+        'source' and 'target' keys.
+
+        All declarations must be relative to the project directory in both
+        source and target contexts - i.e., you can't copy a folder to an
+        arbitrary system directory.
+
+        If an item is just a string, it will just copy the dir to the top
+        level of the project directory. If it's a dict, it will copy
+        "source" to "target," (again, the paths must be relative).
+        """
+        args = []
+        for i in self.contents.get('extra_dirs', []):
+            if isinstance(i, str):
+                src = i
+                dest = self.remote_virtualenv_path
+            elif isinstance(i, dict):
+                src = i['source']
+                dest = i['target']
+            else:
+                continue
+
+            source = path.normpath(path.join(self.manifest_dir, src))
+            target = path.normpath(path.join(
+                        self.remote_virtualenv_path,
+                        dest))
+
+            # Ensure source dir really exists
+            if path.exists(source) or not validate_dirs_exist:
+                args.append("{}={}".format(source, target))
+
+        return args
 
     def get_single_flags(self):
 

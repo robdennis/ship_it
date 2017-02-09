@@ -71,3 +71,12 @@ class TestCallingTheRightPackaging(object):
         ship_it._package_virtualenv_with_manifest(copy_manifest, 'req', 'set')
         mock_copy.assert_called_once_with('req',
                                           copy_manifest.local_package_path)
+
+
+def test_extra_dirs_manifest(extra_dirs_str_manifest, extra_dirs_dict_manifest):
+    for manifest, expected in (
+        (extra_dirs_str_manifest, '/test_dir/foodir=/opt/ship_it'),
+        (extra_dirs_dict_manifest, '/test_dir/foodir=/opt/ship_it/some/target/dir'),
+    ):
+        result = manifest.get_extra_dirs(validate_dirs_exist=False).pop()
+        assert result == expected

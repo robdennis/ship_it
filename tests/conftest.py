@@ -42,3 +42,20 @@ def install_manifest():
         name='ship_it',
         method='install',
     ))
+
+
+@pytest.fixture
+def extra_dirs_str_manifest():
+    return Manifest('/test_dir/manifest.yaml', manifest_contents=dict(
+        version='0.1.0',
+        name='ship_it',
+        extra_dirs=["foodir"]
+    ))
+
+@pytest.fixture
+def extra_dirs_dict_manifest():
+    return Manifest('/test_dir/manifest.yaml', manifest_contents=dict(
+        version='0.1.0',
+        name='ship_it',
+        extra_dirs=[{"source": "foodir", "target": "some/target/dir"}]
+    ))
