@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import pipes
-import re
 from os import path
 
+import pipes
+import six
+import time
 import yaml
 
 
@@ -91,8 +92,8 @@ class Manifest(object):
         flags = {
             flag.replace('_', '-'): value
             for flag, value in self.contents.items()
-            if flag in ('name', 'version', 'iteration', 'before_install',
-                        'after_install', 'description')
+            if flag in ('name', 'version', 'iteration', 'epoch',
+                        'before_install', 'after_install', 'description')
         }
 
         for script_type in ('before-install', 'after-install'):
@@ -100,6 +101,10 @@ class Manifest(object):
             if script_path and not path.isabs(script_path):
                 flags[script_type] = path.normpath(path.join(self.manifest_dir,
                                                              script_path))
+
+        # Allow users to use 'timestamp' as a value
+        if isinstance(flags.get('epoch'), six.string_types) and flags.get('epoch').lower() == 'timestamp':
+            flags['epoch'] = str(int(time.time()))
 
         return list(flags.items())
 

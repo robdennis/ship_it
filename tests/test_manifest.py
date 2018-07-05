@@ -1,17 +1,17 @@
 # coding=utf-8
 from __future__ import unicode_literals
 
-import mock
 import os
-import pytest
+import time
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
-import ship_it
-from ship_it.manifest import Manifest, get_manifest_from_path
+import mock
+import pytest
 import yaml
+from ship_it.manifest import Manifest, get_manifest_from_path
 
 
 @pytest.fixture
@@ -196,6 +196,7 @@ class TestGettingArgsAndFlags(object):
         (dict(version='test'), [('version', 'test')]),
         (dict(iteration='test'), [('iteration', 'test')]),
         (dict(description='test'), [('description', 'test')]),
+        (dict(epoch=1234), [('epoch', 1234)]),
         # We do do some normalization on some of them
         (dict(before_install='test'), [('before-install', '/test_dir/test')]),
         (dict(after_install='test'), [('after-install', '/test_dir/test')]),
@@ -209,6 +210,19 @@ class TestGettingArgsAndFlags(object):
         # just test the subset of things we care about
         manifest.contents = test_man
         assert sorted(manifest.get_single_flags()) == sorted(expected)
+
+    @pytest.mark.parametrize('epoch_value', [
+        'TIMESTAMP',
+        'timestamp',
+        'TimeStamp',
+    ])
+    def test_epoch_flag(self, manifest, epoch_value):
+        """
+        Test generating a timestamp for the epoch value.
+        """
+        manifest.contents = {'epoch': epoch_value}
+        curtime = int(time.time())
+        assert int(manifest.get_single_flags()[0][1]) in range(curtime, curtime + 10)
 
     @pytest.mark.parametrize('test_cfg, expected_args, expected_flags', [
         # we don't have to return config files
