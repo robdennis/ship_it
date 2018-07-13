@@ -186,6 +186,45 @@ class TestPackagePath(object):
         assert test_man.local_package_path == expected
 
 
+class TestRemotePackagePath(object):
+    """
+    Test things related to figuring out the remote package path
+    """
+    def test_default_to_virtualenv_name(self):
+        """
+        Test that if unspecified, it uses the virtualenv name and /opt
+        """
+        test_man = Manifest('/path/manifest.yaml', manifest_contents=dict(
+            name='prefix-ship_it',
+            virtualenv_name='ship_it'
+        ))
+        assert test_man.virtualenv_name == 'ship_it'
+        assert test_man.remote_package_path == '/opt'
+        assert test_man.remote_virtualenv_path == '/opt/ship_it'
+
+    @pytest.mark.parametrize('pkg_path,expected', [
+        # we respect absolute paths
+        ('/usr/local/share', '/usr/local/share/pkg'),
+        ('/usr/local/share/', '/usr/local/share/pkg'),
+        # relative paths are relative to pkg_location
+        ('company_name', '/opt/company_name/pkg'),
+        ('company_name/', '/opt/company_name/pkg'),
+    ])
+    def test_override(self, pkg_path, expected):
+        """
+        Test that if unspecified, it uses the virtualenv name and the manifest
+        directory
+        """
+        test_man = Manifest('/path/manifest.yaml', manifest_contents=dict(
+            name='ship_it',
+            virtualenv_name='pkg',
+            remote_package_path=pkg_path
+        ))
+
+        assert test_man.virtualenv_name == 'pkg'
+        assert test_man.remote_virtualenv_path == expected
+
+
 class TestGettingArgsAndFlags(object):
     """
     Test the specifics of getting command line flags and args from a manifest
@@ -315,6 +354,15 @@ class TestGettingArgsAndFlags(object):
     def test_get_bool_value(self, manifest, value, expected):
         manifest.contents['test'] = value
         assert manifest.get_bool_value('test') is expected
+
+    @mock.patch('ship_it.manifest.Manifest.remote_package_path', new_callable=mock.PropertyMock)
+    def test_remote_pkg_path_arg(self, mock_remote_pkg_path, manifest):
+        """
+        Test that the value returned from remote_package_path is set in fpm
+        """
+        destination = '/usr/local/share'
+        mock_remote_pkg_path.return_value = destination
+        assert manifest.get_args_and_flags()[0][0] == '/test_dir/build/ship_it={}'.format(destination)
 
     @pytest.mark.parametrize('cfg_update,expected_user,expected_group', [
         ({},                'ship_it', 'ship_it'),

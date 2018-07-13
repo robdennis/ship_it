@@ -47,7 +47,7 @@ class Manifest(object):
 
     def get_args_and_flags(self):
         args = [pipes.quote('{}={}'.format(self.local_virtualenv_path,
-                                           self.pkg_location))]
+                                           self.remote_package_path))]
         flags = self.get_single_flags()
 
 
@@ -161,11 +161,23 @@ class Manifest(object):
             return self.contents['local_package_path']
 
     @property
+    def remote_package_path(self):
+        self.contents.setdefault('remote_package_path', None)
+        if self.contents['remote_package_path'] is not None:
+            if not path.isabs(self.contents['remote_package_path']):
+                return path.abspath(path.join(self.pkg_location,
+                                    self.contents['remote_package_path']))
+            else:
+                return self.contents['remote_package_path']
+        else:
+            return self.pkg_location
+
+    @property
     def local_virtualenv_path(self):
         return path.join(self.manifest_dir, 'build', self.virtualenv_name)
 
 
     @property
     def remote_virtualenv_path(self):
-        return path.join(self.pkg_location, self.virtualenv_name)
+        return path.join(self.remote_package_path, self.virtualenv_name)
 
