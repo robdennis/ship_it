@@ -61,6 +61,8 @@ class Manifest(object):
         cfg_args, cfg_flags = self.get_config_args_and_flags()
         args.extend(cfg_args)
         flags.extend(cfg_flags)
+        extra_args = self.get_extra_files_args()
+        args.extend(extra_args)
         flags.extend(self.get_dependency_flags())
         flags.extend(self.get_exclude_flags())
 
@@ -86,6 +88,23 @@ class Manifest(object):
                                         pipes.quote(path.dirname(remote_cfg))))
 
         return args, flags
+
+    def get_extra_files_args(self):
+        args = []
+        if not self.contents.get('extra_files'):
+            return args
+
+        for remote_path, local_path in self.contents['extra_files'].items():
+            remote_file = path.normpath(path.join(self.remote_virtualenv_path,
+                                                  remote_path))
+            assert path.isabs(remote_file)
+            local_file = path.normpath(path.join(self.manifest_dir, local_path))
+            # We'll rely on fpm to error if it's a nonexistent path.
+            assert path.isabs(local_file)
+            args.append('{}={}/'.format(pipes.quote(local_file),
+                                        pipes.quote(path.dirname(remote_file))))
+        return args
+
 
     def get_single_flags(self):
 
@@ -180,4 +199,3 @@ class Manifest(object):
     @property
     def remote_virtualenv_path(self):
         return path.join(self.remote_package_path, self.virtualenv_name)
-
