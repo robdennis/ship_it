@@ -291,6 +291,35 @@ class TestGettingArgsAndFlags(object):
         assert sorted(actual_args) == sorted(expected_args)
         assert sorted(actual_flags) == sorted(expected_flags)
 
+    @pytest.mark.parametrize('test_extra_files, expected_args', [
+        # we don't have to have extra files
+        ({}, []),
+        # relative path files
+        ({'content/important.txt': 'src/important.txt'},
+         ['/test_dir/src/important.txt=/opt/ship_it/content/']),
+        # relative path directories
+        ({'content': 'content/'},
+         ['/test_dir/content=/opt/ship_it/']),
+        # absolute path files
+        ({'/etc/ship_it/important.txt': 'external/important.txt'},
+         ['/test_dir/external/important.txt=/etc/ship_it/']),
+        # absolute path directores
+        ({'/etc/ship_it/content': 'external/content/'},
+         ['/test_dir/external/content=/etc/ship_it/']),
+        # more than one extra file
+        ({'/etc/ship_it/important.txt': 'external/important.txt',
+          'content/important.txt': 'src/important.txt'},
+         ['/test_dir/external/important.txt=/etc/ship_it/',
+          '/test_dir/src/important.txt=/opt/ship_it/content/']),
+    ])
+    def test_extra_files(self, manifest, test_extra_files, expected_args):
+        """
+        Test getting the right arguments from extra files/
+        """
+        manifest.contents.update({'extra_files': test_extra_files})
+        actual_args = manifest.get_extra_files_args()
+        assert sorted(actual_args) == sorted(expected_args)
+
     @pytest.mark.parametrize('dependency_type,value,expected', [
         # you can specify nothing, and it's fine
         ('depends', [], []),
@@ -372,20 +401,23 @@ class TestGettingArgsAndFlags(object):
           'group': 'root'}, 'root', 'root'),
     ])
     @mock.patch('ship_it.manifest.Manifest.get_config_args_and_flags')
+    @mock.patch('ship_it.manifest.Manifest.get_extra_files_args')
     @mock.patch('ship_it.manifest.Manifest.get_single_flags')
     @mock.patch('ship_it.manifest.Manifest.get_dependency_flags')
     @mock.patch('ship_it.manifest.Manifest.get_exclude_flags')
     def test_get_overall_args(self, mock_excludes, mock_depends, mock_single,
-                              mock_cfg, manifest, cfg_update, expected_user, expected_group):
+                              mock_extra, mock_cfg,  manifest, cfg_update, expected_user, expected_group):
         # Return values must be set here, rather than in the decorator,
         # to reset their state for each iteration.
         mock_excludes.return_value = [('exclude', '**.pyc'), ('exclude', '**.pyo')]
         mock_depends.return_value = [('depends', 'weird-dependency == 0.1')]
         mock_single.return_value = [('single', 'flag')]
         mock_cfg.return_value = (['cfg arg'], [('cfg', 'flag')])
+        mock_extra.return_value = ['extra=arg']
 
         expected_args = [
             'cfg arg',
+            'extra=arg',
             '/test_dir/build/ship_it=/opt'
         ]
         expected_flags = [
