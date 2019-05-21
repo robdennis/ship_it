@@ -32,6 +32,7 @@ Options
 	after_install: path to post_install script
 	description: Package description
 	config_files: dictionary of files to be included and their local path
+	extra_files: dictionary of non-config files to be included and their local path
 	user: the user to own installed files (defaults to virtualenv_name)
 	group: the group to own installed files (defaults to user)
 	upgrade_pip: if pip should be upgraded after building virtualenv
@@ -53,3 +54,5 @@ Example
     group: root
     config_files:
       /etc/frufyfru.conf: examples/frufyfru.conf
+    extra_files:
+      bin/your_cool_executable: some/local/path/my_cool_executable.sh
