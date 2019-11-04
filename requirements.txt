@@ -1,5 +1,5 @@
 click==6.6
 invoke==0.13.0
-PyYaml==3.11
+PyYaml==5.1
 six==1.7.3
 virtualenv==1.11.6
